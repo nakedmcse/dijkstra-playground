@@ -1,5 +1,6 @@
 import React from 'react';
 import RenderMap from './RenderMap';
+import Controls from './Controls';
 import './App.css';
 
 function App() {
@@ -10,7 +11,7 @@ function App() {
           {RenderMap()}
         </div>
         <div className="col-md-3">
-          <p>Buttons etc go here</p>
+            {Controls()}
         </div>
       </div>
 
