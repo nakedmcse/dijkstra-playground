@@ -1,0 +1,23 @@
+table.maze {
+  --cell: 5px;                 /* square size */
+  --gap: 2px;                  /* spacing between squares */
+  --emptycell: #000000;               /* empty */
+  --specialcell: #9be9a8;
+  --wallcell: #30a14e;
+
+  border-collapse: separate;
+  border-spacing: var(--gap);
+}
+
+table.maze td {
+  width: var(--cell);
+  height: var(--cell);
+  padding: 0;
+  background: var(--emptycell);
+  border-radius: 1px;          /* subtle rounding like GitHub */
+  transition: outline 0.1s ease;
+}
+
+table.maze td[data-type="empty"] { background: var(--emptycell); }
+table.maze td[data-type="special"] { background: var(--specialcell); }
+table.maze td[data-type="wall"] { background: var(--wallcell); }
