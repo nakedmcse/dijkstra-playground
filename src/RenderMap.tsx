@@ -1,8 +1,7 @@
 import React from 'react';
 import './App.css';
 
-function RenderMap() {
-    const [map, setMap] = React.useState<string[]>([]);
+function RenderMap({ map, setMap }: { map: string[], setMap: React.Dispatch<React.SetStateAction<string[]>> }) {
     React.useEffect(() => {
         // Load default map
         fetch("/maze.txt")
@@ -10,7 +9,7 @@ function RenderMap() {
             .then((text) => {
                 setMap(text.split(/\r?\n/));
             });
-    },[])
+    },[setMap])
 
     function findCellType(c: string): string {
         switch (c) {
