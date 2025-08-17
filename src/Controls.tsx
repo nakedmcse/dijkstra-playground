@@ -1,6 +1,6 @@
 import React from 'react';
-import {MinPriorityQueue} from "@datastructures-js/priority-queue";
-import {Point, Node, PathStats, Weight} from './types'
+import {PathStats, Weight, CompletedPath} from './types'
+import {findGiven, dijkstra} from "./mazeUtils";
 import './App.css';
 
 function Controls( {map, setMap, stats, setStats, weight, setWeight }: {
@@ -15,97 +15,16 @@ function Controls( {map, setMap, stats, setStats, weight, setWeight }: {
         return undefined;
     }
 
-    function findGiven(g: string): Point {
-        for (let y = 0; y < map.length; y++) {
-            for (let x = 0; x < map[y].length; x++) {
-                if (map[y][x] === g) return {x:x, y:y};
-            }
-        }
-        return {x:-1, y:-1};
-    }
-
-    function getWeight(d: string): number {
-        switch(d) {
-            case 'u':
-                return weight.up;
-            case 'd':
-                return weight.down;
-            case 'l':
-                return weight.left;
-            case 'r':
-                return weight.right;
-            default:
-                return 0;
-        }
-    }
-
-    function dijkstra(start: Point, end: Point) {
-        const grid = map.slice();
-        const rows = grid.length;
-        const cols = grid[0]?.length ?? 0;
-
-        // Directions for moving up, down, left, right
-        const directions = [
-            { x: 0, y: 1, d: 'd' },
-            { x: 0, y: -1, d: 'u' },
-            { x: 1, y: 0, d: 'r' },
-            { x: -1, y: 0, d: 'l' }
-        ];
-
-        const isValid = (x: number, y: number): boolean =>
-            x >= 0 && y >= 0 && x < cols && y < rows && grid[y][x] !== '#';
-
-        // Priority queue to manage nodes to process, ordered by cost
-        const pq = new MinPriorityQueue<Node>(r => r.cost);
-        const visited: boolean[][] = Array.from({ length: rows }, () => Array(cols).fill(false));
-        const costs: number[][] = Array.from({ length: rows }, () => Array(cols).fill(Infinity));
-
-        pq.push({ point: start, cost: 0, length: 0 });
-        costs[start.y][start.x] = 0;
-
-        while (!pq.isEmpty()) {
-            // Extract node with smallest cost
-            const { point, cost, length } = pq.dequeue() ?? { point: {x:-1,y:-1}, cost: Infinity, length: Infinity };
-            const { x, y } = point;
-
-            if (visited[y][x]) continue; // Skip if already processed
-            visited[y][x] = true;
-
-            // If we reached the end
-            if (x === end.x && y === end.y) {
-                setStats({cost: cost, length: length});
-                break;
-            }
-
-            // Mark map
-            if (x !== start.x || y !== start.y) grid[y] = grid[y].substring(0,x) + "P" + grid[y].substring(x+1);
-
-            // Explore neighbors
-            for (const dir of directions) {
-                const nx = x + dir.x;
-                const ny = y + dir.y;
-
-                if (isValid(nx, ny) && !visited[ny][nx]) {
-                    const newCost = cost + getWeight(dir.d);
-                    const newLength = length + 1;
-                    if (newCost < costs[ny][nx]) {
-                        costs[ny][nx] = newCost;
-                        pq.push({ point: { x: nx, y: ny }, cost: newCost, length: newLength });
-                    }
-                }
-            }
-        }
-        setMap(grid.slice());
-    }
-
     function generatePath(): undefined {
-        const sPoint = findGiven('S');
-        const ePoint = findGiven('E');
+        const sPoint = findGiven(map, 'S');
+        const ePoint = findGiven(map, 'E');
         if(sPoint.x === -1 && sPoint.y === -1) return;  // cant find start
         for (let line of map) {
             if(line.includes('P')) return;  // already path
         }
-        dijkstra(sPoint, ePoint);
+        const finalPath = dijkstra(map.slice(), weight, sPoint, ePoint);
+        setMap(finalPath.grid.slice());
+        setStats(finalPath.stats);
         return undefined;
     }
 
