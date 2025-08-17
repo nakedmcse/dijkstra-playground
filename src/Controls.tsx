@@ -1,12 +1,17 @@
 import React from 'react';
 import {MinPriorityQueue} from "@datastructures-js/priority-queue";
-import {Point, Node} from './types'
+import {Point, Node, PathStats, Weight} from './types'
 import './App.css';
 
-function Controls( {map, setMap }: { map: string[], setMap: React.Dispatch<React.SetStateAction<string[]>> }) {
+function Controls( {map, setMap, stats, setStats, weight, setWeight }: {
+    map: string[], setMap: React.Dispatch<React.SetStateAction<string[]>>,
+    stats: PathStats, setStats: React.Dispatch<React.SetStateAction<PathStats>>,
+    weight: Weight, setWeight: React.Dispatch<React.SetStateAction<Weight>>
+}) {
 
     function clearPath(): undefined {
         setMap(prev => prev.map(line => line.replace(/P/g, ' ')));
+        setStats({ cost: 0, length: 0});
         return undefined;
     }
 
@@ -19,6 +24,21 @@ function Controls( {map, setMap }: { map: string[], setMap: React.Dispatch<React
         return {x:-1, y:-1};
     }
 
+    function getWeight(d: string): number {
+        switch(d) {
+            case 'u':
+                return weight.up;
+            case 'd':
+                return weight.down;
+            case 'l':
+                return weight.left;
+            case 'r':
+                return weight.right;
+            default:
+                return 0;
+        }
+    }
+
     function dijkstra(start: Point, end: Point) {
         const grid = map.slice();
         const rows = grid.length;
@@ -26,10 +46,10 @@ function Controls( {map, setMap }: { map: string[], setMap: React.Dispatch<React
 
         // Directions for moving up, down, left, right
         const directions = [
-            { x: 0, y: 1 },
-            { x: 0, y: -1 },
-            { x: 1, y: 0 },
-            { x: -1, y: 0 }
+            { x: 0, y: 1, d: 'd' },
+            { x: 0, y: -1, d: 'u' },
+            { x: 1, y: 0, d: 'r' },
+            { x: -1, y: 0, d: 'l' }
         ];
 
         const isValid = (x: number, y: number): boolean =>
@@ -44,7 +64,6 @@ function Controls( {map, setMap }: { map: string[], setMap: React.Dispatch<React
         costs[start.y][start.x] = 0;
 
         while (!pq.isEmpty()) {
-            console.log(pq.size());
             // Extract node with smallest cost
             const { point, cost, length } = pq.dequeue() ?? { point: {x:-1,y:-1}, cost: Infinity, length: Infinity };
             const { x, y } = point;
@@ -53,7 +72,10 @@ function Controls( {map, setMap }: { map: string[], setMap: React.Dispatch<React
             visited[y][x] = true;
 
             // If we reached the end
-            if (x === end.x && y === end.y) break;
+            if (x === end.x && y === end.y) {
+                setStats({cost: cost, length: length});
+                break;
+            }
 
             // Mark map
             if (x !== start.x || y !== start.y) grid[y] = grid[y].substring(0,x) + "P" + grid[y].substring(x+1);
@@ -64,7 +86,7 @@ function Controls( {map, setMap }: { map: string[], setMap: React.Dispatch<React
                 const ny = y + dir.y;
 
                 if (isValid(nx, ny) && !visited[ny][nx]) {
-                    const newCost = cost + 1; // Increment cost by 1 for valid moves
+                    const newCost = cost + getWeight(dir.d);
                     const newLength = length + 1;
                     if (newCost < costs[ny][nx]) {
                         costs[ny][nx] = newCost;
@@ -87,10 +109,49 @@ function Controls( {map, setMap }: { map: string[], setMap: React.Dispatch<React
         return undefined;
     }
 
+    function handleWeightSet(e: React.ChangeEvent<HTMLInputElement>) {
+        let newWeight: Weight = { up: weight.up, down: weight.down, left: weight.left, right: weight.right };
+        switch (e.target.dataset.cost) {
+            case 'up':
+                newWeight.up = parseInt(e.target.value, 10);
+                if (isNaN(newWeight.up)) newWeight.up = 0;
+                break;
+            case 'down':
+                newWeight.down = parseInt(e.target.value, 10);
+                if (isNaN(newWeight.down)) newWeight.down = 0;
+                break;
+            case 'left':
+                newWeight.left = parseInt(e.target.value, 10);
+                if (isNaN(newWeight.left)) newWeight.left = 0;
+                break;
+            case 'right':
+                newWeight.right = parseInt(e.target.value, 10);
+                if (isNaN(newWeight.right)) newWeight.right = 0;
+                break;
+        }
+        setWeight(newWeight);
+    }
+
     return (
         <div className="controls">
             <div className="h-100 p-3 text-bg-dark rounded-3 border border-danger-subtle bg-body-tertiary">
                 <h3>Dijkstras Playground</h3>
+                <div className="row mb-2">
+                    <div className="col-3">Up Cost:</div>
+                    <div className="col-2"><input className="form-control" type="text" data-cost="up" value={weight.up} onChange={handleWeightSet}/></div>
+                    <div className="col-3">Down Cost:</div>
+                    <div className="col-2"><input className="form-control" type="text" data-cost="down" value={weight.down} onChange={handleWeightSet}/></div>
+                </div>
+                <div className="row mb-2">
+                    <div className="col-3">Right Cost:</div>
+                    <div className="col-2"><input className="form-control" type="text" data-cost="right" value={weight.right} onChange={handleWeightSet}/></div>
+                    <div className="col-3">Left Cost:</div>
+                    <div className="col-2"><input className="form-control" type="text" data-cost="left" value={weight.left} onChange={handleWeightSet}/></div>
+                </div>
+                <div className="row mb-2">
+                    <div className="col-4">Path Cost: {stats.cost}</div>
+                    <div className="col-4">Path Length: {stats.length}</div>
+                </div>
                 <div className="row">
                     <div className="col-3">
                         <button type="button" className="btn btn-primary" onClick={generatePath}>Generate</button>
