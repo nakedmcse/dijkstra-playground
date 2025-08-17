@@ -3,10 +3,13 @@ table.maze {
   --gap: 2px;                  /* spacing between squares */
   --emptycell: #000000;               /* empty */
   --specialcell: #9be9a8;
+  --pathcell: #ffff00;
   --wallcell: #30a14e;
 
   border-collapse: separate;
   border-spacing: var(--gap);
+  margin-left: auto;
+  margin-right: auto;
 }
 
 table.maze td {
@@ -20,4 +23,5 @@ table.maze td {
 
 table.maze td[data-type="empty"] { background: var(--emptycell); }
 table.maze td[data-type="special"] { background: var(--specialcell); }
+table.maze td[data-type="path"] { background: var(--pathcell); }
 table.maze td[data-type="wall"] { background: var(--wallcell); }

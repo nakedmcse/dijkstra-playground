@@ -16,9 +16,10 @@ function RenderMap({ map, setMap }: { map: string[], setMap: React.Dispatch<Reac
             case '#':
                 return 'wall'
             case 'S':
-                return 'special'
             case 'E':
                 return 'special'
+            case 'P':
+                return 'path'
             default:
                 return 'empty'
         }
@@ -27,6 +28,7 @@ function RenderMap({ map, setMap }: { map: string[], setMap: React.Dispatch<Reac
     return (
         <div className="container">
             <table className="maze">
+                <tbody>
                 {map.map((row, idx) => (
                     <tr key={idx}>
                         {[...row].map(item => (
@@ -34,6 +36,7 @@ function RenderMap({ map, setMap }: { map: string[], setMap: React.Dispatch<Reac
                         ))}
                     </tr>
                 ))}
+                </tbody>
             </table>
         </div>
     )
