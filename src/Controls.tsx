@@ -1,6 +1,6 @@
 import React from 'react';
 import {PathStats, Weight, CompletedPath} from './types'
-import {findGiven, dijkstra} from "./mazeUtils";
+import {findGiven, dijkstra, newMaze} from "./mazeUtils";
 import './App.css';
 
 function Controls( {map, setMap, stats, setStats, weight, setWeight }: {
@@ -11,6 +11,12 @@ function Controls( {map, setMap, stats, setStats, weight, setWeight }: {
 
     function clearPath(): undefined {
         setMap(prev => prev.map(line => line.replace(/P/g, ' ')));
+        setStats({ cost: 0, length: 0});
+        return undefined;
+    }
+
+    function genNewMaze(): undefined {
+        setMap(newMaze(142,142).slice());
         setStats({ cost: 0, length: 0});
         return undefined;
     }
@@ -55,28 +61,31 @@ function Controls( {map, setMap, stats, setStats, weight, setWeight }: {
         <div className="controls">
             <div className="h-100 p-3 text-bg-dark rounded-3 border border-danger-subtle bg-body-tertiary">
                 <h3>Dijkstras Playground</h3>
+                <div className="row mb-2 mt-4">
+                    <div className="col-5"><h4>Path Cost: {stats.cost}</h4></div>
+                    <div className="col-5"><h4>Path Length: {stats.length}</h4></div>
+                </div>
                 <div className="row mb-2">
                     <div className="col-3">Up Cost:</div>
                     <div className="col-2"><input className="form-control" type="text" data-cost="up" value={weight.up} onChange={handleWeightSet}/></div>
                     <div className="col-3">Down Cost:</div>
                     <div className="col-2"><input className="form-control" type="text" data-cost="down" value={weight.down} onChange={handleWeightSet}/></div>
                 </div>
-                <div className="row mb-2">
+                <div className="row mb-4">
                     <div className="col-3">Right Cost:</div>
                     <div className="col-2"><input className="form-control" type="text" data-cost="right" value={weight.right} onChange={handleWeightSet}/></div>
                     <div className="col-3">Left Cost:</div>
                     <div className="col-2"><input className="form-control" type="text" data-cost="left" value={weight.left} onChange={handleWeightSet}/></div>
                 </div>
-                <div className="row mb-2">
-                    <div className="col-4">Path Cost: {stats.cost}</div>
-                    <div className="col-4">Path Length: {stats.length}</div>
-                </div>
                 <div className="row">
-                    <div className="col-3">
-                        <button type="button" className="btn btn-primary" onClick={generatePath}>Generate</button>
+                    <div className="col-4">
+                        <button type="button" className="btn btn-primary" onClick={generatePath}>Generate Path</button>
                     </div>
-                    <div className="col-3">
-                        <button type="button" className="btn btn-secondary" onClick={clearPath}>Clear</button>
+                    <div className="col-4">
+                        <button type="button" className="btn btn-secondary" onClick={clearPath}>Clear Path</button>
+                    </div>
+                    <div className="col-4">
+                        <button type="button" className="btn btn-danger" onClick={genNewMaze}>New Maze</button>
                     </div>
                 </div>
             </div>
