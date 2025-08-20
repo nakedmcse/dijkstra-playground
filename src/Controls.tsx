@@ -92,14 +92,10 @@ function Controls( {map, setMap, stats, setStats, weight, setWeight, showAllPath
                     </div>
                 </div>
                 <div className="row">
-                    <div className="col-4">
+                    <div className="col-12">
                         <button type="button" className="btn btn-primary" onClick={generatePath}>Generate Path</button>
-                    </div>
-                    <div className="col-4">
-                        <button type="button" className="btn btn-secondary" onClick={clearPath}>Clear Path</button>
-                    </div>
-                    <div className="col-4">
-                        <button type="button" className="btn btn-danger" onClick={genNewMaze}>New Maze</button>
+                        <button type="button" className="btn btn-secondary ms-4" onClick={clearPath}>Clear Path</button>
+                        <button type="button" className="btn btn-danger ms-4" onClick={genNewMaze}>New Maze</button>
                     </div>
                 </div>
             </div>
