@@ -16,7 +16,7 @@ function Controls( {map, setMap, stats, setStats, weight, setWeight }: {
     }
 
     function genNewMaze(): undefined {
-        setMap(newMaze(142,142).slice());
+        setMap(newMaze(141,141).slice());
         setStats({ cost: 0, length: 0});
         return undefined;
     }

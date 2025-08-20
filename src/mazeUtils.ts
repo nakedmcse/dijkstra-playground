@@ -9,6 +9,9 @@ export function findGiven(grid: string[], g: string): Point {
     }
     return {x:-1, y:-1};
 }
+export function cell(g: string[], x: number, y: number, c: string): void {
+    g[y] = g[y].substring(0,x) + c + g[y].substring(x+1);
+}
 
 export function dijkstra(grid: string[], weights: Weight, start: Point, end: Point): CompletedPath {
     const rows = grid.length;
@@ -49,7 +52,7 @@ export function dijkstra(grid: string[], weights: Weight, start: Point, end: Poi
         }
 
         // Mark map
-        if (x !== start.x || y !== start.y) grid[y] = grid[y].substring(0,x) + "P" + grid[y].substring(x+1);
+        if (x !== start.x || y !== start.y) cell(grid, x, y, 'P');
 
         // Explore neighbors
         for (const dir of directions) {
@@ -85,20 +88,10 @@ export function getWeight(w: Weight, d: string): number {
 }
 
 export function newMaze(width: number, height: number): string[] {
-    // Hunt and kill maze generator
-
-    // Check if maze complete
-    function complete(g: string[]): boolean {
-        for (let y = 1; y < g.length; y += 2) {
-            for (let x = 1; x < g[y].length; x += 2) {
-                if(g[y][x] === '#') return false;
-            }
-        }
-        return true;
-    }
+    // Stack DFS maze generator
 
     // Find neighboring movement options
-    function neighbors(g: string[], p: Point): Point[] {
+    function neighbors(g: string[], p: Point, v: boolean[][]): Point[] {
         const retval:Point[] = [];
         const directions = [
             { x: 0, y: 2 },
@@ -107,57 +100,44 @@ export function newMaze(width: number, height: number): string[] {
             { x: -2, y: 0 }
         ];
         const isValid = (x: number, y: number): boolean =>
-            x >= 0 && y >= 0 && x < g[0].length && y < g.length && g[y][x] === '#';
+            x > 0 && y > 0 && x < g[0].length-1 && y < g.length-1 && (g[y][x] === '#') && !v[y][x];
 
         for (const d of directions) {
-            if(isValid(p.x + d.x, p.y + d.y)) retval.push({x:p.x + (d.x/2), y:p.y + (d.y/2)});
+            if(isValid(p.x + d.x, p.y + d.y)) retval.push({x:d.x, y:d.y});
         }
         return retval;
     }
 
-    // Find new start point when out of moves
-    function newStart(g: string[]): Point | null {
-        for (let y = 1; y < g.length; y += 2) {
-            for (let x = 1; x < g[y].length; x += 2) {
-                if(g[y][x] === '#') {
-                    const n = neighbors(g, {x:x, y:y});
-                    if (n.length > 0) return {x:x, y:y};
-                }
-            }
-        }
-        return null;
-    }
-
     // Create filled grid and add start/end
     const grid = Array.from({ length: height }, () => "#".repeat(width));
-    grid[1] = grid[1].substring(0,1) + "S" + grid[1].substring(2);  // Start at 1,1
-    grid[height-2] = grid[height-2].substring(0,width-2) + "E" + grid[height-2].substring(width-1);  // End at width-1,height-1
+    cell(grid, 1, 1, 'S');  // Start at 1,1
     let current: Point = {x:1,y:1};
+    const visited: boolean[][] = Array.from({ length: height }, () => Array(width).fill(false));
+    visited[1][1] = true;
+    const q: Point[] = [];
+    q.push(current);
 
-    // Hunt and kill
+    // DFS from start point
     try {
-        while (!complete(grid)) {
-            const n = neighbors(grid, current);
-            if (n.length > 0) {
-                // Choose random new direction and move
+        while (q.length > 0) {
+            current = q.pop() ?? {x:0,y:0};
+            const n = neighbors(grid, current, visited);
+            if(n.length > 0) {
+                q.push(current);
                 const i = Math.floor(Math.random() * n.length);
-                grid[n[i].y] = grid[n[i].y].substring(0, n[i].x) + " "
-                    + grid[n[i].y].substring(n[i].x + 1);
-                current.x += n[i].x;
-                current.y += n[i].y;
-            } else {
-                // Find new start point
-                const ns = newStart(grid);
-                if (!ns) break;   // Out of moves
-                grid[ns.y] = grid[ns.y].substring(0, ns.x) + " " + grid[ns.y].substring(ns.x + 1);
-                current = ns;
+                cell(grid, current.x+n[i].x, current.y+n[i].y, ' ');  // open target
+                cell(grid, current.x+(n[i].x/2), current.y+(n[i].y/2), ' ');  // open corridor
+                visited[current.y+n[i].y][current.x+n[i].x] = true;
+                q.push({x:current.x+n[i].x, y:current.y+n[i].y});
             }
         }
     }
     catch (e) {
         console.error(e);
+        cell(grid, width-2, height-2, 'E');  // End at width-1,height-1
         return grid;
     }
 
+    cell(grid, width-2, height-2, 'E');  // End at width-1,height-1
     return grid;
 }
