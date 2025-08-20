@@ -1,14 +1,11 @@
 import React from 'react';
 import './App.css';
+import {newMaze} from "./mazeUtils";
 
 function RenderMap({ map, setMap }: { map: string[], setMap: React.Dispatch<React.SetStateAction<string[]>> }) {
     React.useEffect(() => {
         // Load default map
-        fetch("/maze.txt")
-            .then((res) => res.text())
-            .then((text) => {
-                setMap(text.split(/\r?\n/));
-            });
+        setMap(newMaze(141,141).slice());
     },[setMap])
 
     function findCellType(c: string): string {
