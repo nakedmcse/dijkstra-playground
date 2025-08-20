@@ -3,21 +3,22 @@ import {PathStats, Weight, CompletedPath} from './types'
 import {findGiven, dijkstra, newMaze} from "./mazeUtils";
 import './App.css';
 
-function Controls( {map, setMap, stats, setStats, weight, setWeight }: {
+function Controls( {map, setMap, stats, setStats, weight, setWeight, showAllPaths, setShowAllPaths }: {
     map: string[], setMap: React.Dispatch<React.SetStateAction<string[]>>,
     stats: PathStats, setStats: React.Dispatch<React.SetStateAction<PathStats>>,
-    weight: Weight, setWeight: React.Dispatch<React.SetStateAction<Weight>>
+    weight: Weight, setWeight: React.Dispatch<React.SetStateAction<Weight>>,
+    showAllPaths: boolean, setShowAllPaths: React.Dispatch<React.SetStateAction<boolean>>,
 }) {
 
     function clearPath(): undefined {
         setMap(prev => prev.map(line => line.replace(/P/g, ' ')));
-        setStats({ cost: 0, length: 0});
+        setStats({ cost: 0, length: 0, path: []});
         return undefined;
     }
 
     function genNewMaze(): undefined {
         setMap(newMaze(141,141).slice());
-        setStats({ cost: 0, length: 0});
+        setStats({ cost: 0, length: 0, path: []});
         return undefined;
     }
 
@@ -28,7 +29,7 @@ function Controls( {map, setMap, stats, setStats, weight, setWeight }: {
         for (let line of map) {
             if(line.includes('P')) return;  // already path
         }
-        const finalPath = dijkstra(map.slice(), weight, sPoint, ePoint);
+        const finalPath = dijkstra(map.slice(), weight, sPoint, ePoint, showAllPaths);
         setMap(finalPath.grid.slice());
         setStats(finalPath.stats);
         return undefined;
@@ -57,6 +58,10 @@ function Controls( {map, setMap, stats, setStats, weight, setWeight }: {
         setWeight(newWeight);
     }
 
+    function handleShowAllPaths(e: React.ChangeEvent<HTMLInputElement>): void {
+        setShowAllPaths(e.target.checked);
+    }
+
     return (
         <div className="controls">
             <div className="h-100 p-3 text-bg-dark rounded-3 border border-danger-subtle bg-body-tertiary">
@@ -76,6 +81,15 @@ function Controls( {map, setMap, stats, setStats, weight, setWeight }: {
                     <div className="col-2"><input className="form-control" type="text" data-cost="right" value={weight.right} onChange={handleWeightSet}/></div>
                     <div className="col-3">Left Cost:</div>
                     <div className="col-2"><input className="form-control" type="text" data-cost="left" value={weight.left} onChange={handleWeightSet}/></div>
+                </div>
+                <div className="row mb-4">
+                    <div className="col-8">
+                        <label className="switch">
+                            <input type="checkbox" id="showAll" onChange={handleShowAllPaths} />
+                            <div className="slider round"></div>
+                        </label>
+                        <label className="slider-text">Show All Considered Paths</label>
+                    </div>
                 </div>
                 <div className="row">
                     <div className="col-4">
