@@ -4,12 +4,13 @@ A react app for playing with a maze path tracing implementation of dijkstras alg
 ## Overview
 
 An efficient implementation of dijkstras algorithm, which is bound to a map which gets updated with the path after tracing.
-Costs for each of the cardinal direcctions can be set.
+Costs for each of the cardinal direcctions can be set.  It can be set to show just the winning path, or all explored paths.
 
 ## Features
 
 - **Settable Costs** for each of the directions
 - **Min Heap Priority Queue** implementation of dijkstras algorithm
+- **Stack DFS** implementation of maze generation algorithm
 
 ## Usage
 
