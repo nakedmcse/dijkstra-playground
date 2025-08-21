@@ -3,6 +3,7 @@ import RenderMap from './RenderMap';
 import Controls from './Controls';
 import {PathStats, Weight} from './types'
 import './App.css';
+import InfoModal from "./InfoModal";
 
 function App() {
   const [map, setMap] = React.useState<string[]>([]);
@@ -12,6 +13,7 @@ function App() {
 
   return (
     <div className="container-fluid">
+      <InfoModal />
       <div className="row">
         <div className="col-md-8">
             <RenderMap map={map} setMap={setMap}/>

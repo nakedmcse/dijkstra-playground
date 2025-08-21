@@ -11,6 +11,7 @@ Costs for each of the cardinal direcctions can be set.  It can be set to show ju
 - **Settable Costs** for each of the directions
 - **Min Heap Priority Queue** implementation of dijkstras algorithm
 - **Stack DFS** implementation of maze generation algorithm
+- **Information Modal** showing the dijkstra algorithm
 
 ## Usage
 

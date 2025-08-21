@@ -2,6 +2,7 @@ import React from 'react';
 import {PathStats, Weight, CompletedPath} from './types'
 import {findGiven, dijkstra, newMaze} from "./mazeUtils";
 import './App.css';
+import {Modal} from 'bootstrap';
 
 function Controls( {map, setMap, stats, setStats, weight, setWeight, showAllPaths, setShowAllPaths }: {
     map: string[], setMap: React.Dispatch<React.SetStateAction<string[]>>,
@@ -32,6 +33,12 @@ function Controls( {map, setMap, stats, setStats, weight, setWeight, showAllPath
         const finalPath = dijkstra(map.slice(), weight, sPoint, ePoint, showAllPaths);
         setMap(finalPath.grid.slice());
         setStats(finalPath.stats);
+        return undefined;
+    }
+
+    function showInfo(): undefined {
+        const modal = new Modal('#InfoModal');
+        modal.show();
         return undefined;
     }
 
@@ -96,6 +103,7 @@ function Controls( {map, setMap, stats, setStats, weight, setWeight, showAllPath
                         <button type="button" className="btn btn-primary" onClick={generatePath}>Generate Path</button>
                         <button type="button" className="btn btn-secondary ms-4" onClick={clearPath}>Clear Path</button>
                         <button type="button" className="btn btn-danger ms-4" onClick={genNewMaze}>New Maze</button>
+                        <button type="button" className="btn btn-secondary ms-4" onClick={showInfo}>Algorithm</button>
                     </div>
                 </div>
             </div>
