@@ -1,4 +1,4 @@
-import {Node, Point, Weight, CompletedPath, PathStats} from "./types";
+import {CompletedPath, MazeAlgorithm, Node, PathStats, Point, Weight} from "./types";
 import {MinPriorityQueue} from "@datastructures-js/priority-queue";
 
 export function findGiven(grid: string[], g: string): Point {
@@ -93,7 +93,81 @@ export function getWeight(w: Weight, d: string): number {
     }
 }
 
-export function newMaze(width: number, height: number): string[] {
+export function newMaze(width: number, height: number, type: MazeAlgorithm): string[] {
+    switch (type) {
+        case MazeAlgorithm.ENTOMBED:
+            return newMazeEntombed(width, height);
+        case MazeAlgorithm.STACKDFS:
+        default:
+            return newMazeDFS(width, height);
+    }
+}
+
+export function newMazeEntombed(width: number, height: number): string[] {
+    // Entombed maze generator
+
+    // Generate lookup value
+    function lookupval(g: string[], p: Point): number {
+        const isValid = (x: number, y: number): boolean =>
+            x >= 0 && y >= 0 && x < g[0].length && y < g.length && (g[y][x] === '#');
+        const a: Point = {x: 0, y: -2};
+        const b: Point = {x: 0, y: -1};
+        const c: Point = {x: -1, y: -1};
+        const d: Point = {x: -1, y: 0};
+        const e: Point = {x: -1, y: 1};
+
+        let retval = 0;
+        if(isValid(p.x + a.x, p.y + a.y)) retval += 16;
+        if(isValid(p.x + b.x, p.y + b.y)) retval += 8;
+        if(isValid(p.y + c.y, p.y + c.y)) retval += 4;
+        if(isValid(p.x + d.x, p.y + d.y)) retval += 2;
+        if(isValid(p.x + e.x, p.y + e.y)) retval += 1;
+        return retval;
+    }
+
+    // Build lookup table
+    const l = Array.from({ length: 32 }, () => 'r');  // Fill all default random
+    // Invariant 1 rules
+    l[0] = '1'; l[1] = '1'; l[16] = '1'; l[17] = '1';
+    l[14] = '0'; l[15] = '0'; l[30] = '0'; l[31] = '0';
+    // Invariant 2 rules
+    l[2] = '1'; l[10] = '1'; l[18] = '1'; l[24] = '1';
+    l[5] = '0'; l[13] = '0'; l[29] = '0';
+    l[10] = '1'; l[11] = '1'; l[20] = '0'; l[22] = '0'; l[23] = '0';
+    // Invariant 3 rules
+    l[9] = '0'; l[25] = '0';
+    // Drunken Make It Work rule
+    l[4] = '0';
+
+    // Create filled grid and add start/end
+    const grid = Array.from({ length: height }, () => "#".repeat(width));
+    cell(grid, 1, 1, 'S');  // Start at 1,1
+    cell(grid, width-2, height-2, 'E');  // End at width-1,height-1
+
+    // Run entombed algorithm on every location
+    for (let y = 1; y < height-1; y++) {
+        for (let x = 1; x < width-1; x++) {
+            switch (l[lookupval(grid, {x: x, y: y})]) {
+                case '0':
+                    if(grid[y][x]==='#') cell(grid, x, y,' ');
+                    break;
+                case '1':
+                    if(grid[y][x]===' ') cell(grid, x, y, '#');
+                    break;
+                case 'r':
+                    if(Math.random() > 0.5) {
+                        if(grid[y][x]==='#') cell(grid, x, y,' ');
+                    }
+                    else {
+                        if(grid[y][x]===' ') cell(grid, x, y, '#');
+                    }
+            }
+        }
+    }
+    return grid;
+}
+
+export function newMazeDFS(width: number, height: number): string[] {
     // Stack DFS maze generator
 
     // Find neighboring movement options

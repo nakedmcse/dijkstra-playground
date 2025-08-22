@@ -1,14 +1,15 @@
 import React from 'react';
-import {PathStats, Weight, CompletedPath} from './types'
+import {PathStats, Weight, CompletedPath, MazeAlgorithm} from './types'
 import {findGiven, dijkstra, newMaze} from "./mazeUtils";
 import './App.css';
 import {Modal} from 'bootstrap';
 
-function Controls( {map, setMap, stats, setStats, weight, setWeight, showAllPaths, setShowAllPaths }: {
+function Controls( {map, setMap, stats, setStats, weight, setWeight, showAllPaths, setShowAllPaths, mazeAlgorithm, setMazeAlgorithm }: {
     map: string[], setMap: React.Dispatch<React.SetStateAction<string[]>>,
     stats: PathStats, setStats: React.Dispatch<React.SetStateAction<PathStats>>,
     weight: Weight, setWeight: React.Dispatch<React.SetStateAction<Weight>>,
     showAllPaths: boolean, setShowAllPaths: React.Dispatch<React.SetStateAction<boolean>>,
+    mazeAlgorithm: MazeAlgorithm, setMazeAlgorithm: React.Dispatch<React.SetStateAction<MazeAlgorithm>>,
 }) {
 
     function clearPath(): undefined {
@@ -18,7 +19,7 @@ function Controls( {map, setMap, stats, setStats, weight, setWeight, showAllPath
     }
 
     function genNewMaze(): undefined {
-        setMap(newMaze(141,141).slice());
+        setMap(newMaze(141,141, mazeAlgorithm).slice());
         setStats({ cost: 0, length: 0, path: []});
         return undefined;
     }
@@ -69,6 +70,10 @@ function Controls( {map, setMap, stats, setStats, weight, setWeight, showAllPath
         setShowAllPaths(e.target.checked);
     }
 
+    function handleMazeAlgorithm(e: React.ChangeEvent<HTMLSelectElement>) {
+        setMazeAlgorithm(e.target.value as MazeAlgorithm);
+    }
+
     return (
         <div className="controls">
             <div className="h-100 p-3 text-bg-dark rounded-3 border border-danger-subtle bg-body-tertiary">
@@ -90,12 +95,20 @@ function Controls( {map, setMap, stats, setStats, weight, setWeight, showAllPath
                     <div className="col-2"><input className="form-control" type="text" data-cost="left" value={weight.left} onChange={handleWeightSet}/></div>
                 </div>
                 <div className="row mb-4">
-                    <div className="col-8">
+                    <div className="col-7">
                         <label className="switch">
                             <input type="checkbox" id="showAll" onChange={handleShowAllPaths} />
                             <div className="slider round"></div>
                         </label>
                         <label className="slider-text">Show All Considered Paths</label>
+                    </div>
+                    <div className="col-1">Algo:</div>
+                    <div className="col-3">
+                        <select className="form-control" onChange={handleMazeAlgorithm}>
+                            {Object.values(MazeAlgorithm).map(algorithm => (
+                                <option key={algorithm} value={algorithm}>{algorithm}</option>
+                            ))}
+                        </select>
                     </div>
                 </div>
                 <div className="row">

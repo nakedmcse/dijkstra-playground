@@ -1,11 +1,12 @@
 import React from 'react';
 import './App.css';
 import {newMaze} from "./mazeUtils";
+import {MazeAlgorithm} from "./types";
 
 function RenderMap({ map, setMap }: { map: string[], setMap: React.Dispatch<React.SetStateAction<string[]>> }) {
     React.useEffect(() => {
         // Load default map
-        setMap(newMaze(141,141).slice());
+        setMap(newMaze(141,141, MazeAlgorithm.STACKDFS).slice());
     },[setMap])
 
     function findCellType(c: string): string {
