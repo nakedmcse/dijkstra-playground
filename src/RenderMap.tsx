@@ -6,7 +6,7 @@ import {MazeAlgorithm} from "./types";
 function RenderMap({ map, setMap }: { map: string[], setMap: React.Dispatch<React.SetStateAction<string[]>> }) {
     React.useEffect(() => {
         // Load default map
-        setMap(newMaze(141,141, MazeAlgorithm.STACKDFS).slice());
+        newMaze(141,141, MazeAlgorithm.STACKDFS, false, null).then(map => setMap(map.slice()));
     },[setMap])
 
     function findCellType(c: string): string {

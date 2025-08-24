@@ -11,6 +11,7 @@ function Controls( {map, setMap, stats, setStats, weight, setWeight, showAllPath
     showAllPaths: boolean, setShowAllPaths: React.Dispatch<React.SetStateAction<boolean>>,
     mazeAlgorithm: MazeAlgorithm, setMazeAlgorithm: React.Dispatch<React.SetStateAction<MazeAlgorithm>>,
 }) {
+    const [slowMazeBuild, setSlowMazeBuild] = React.useState<boolean>(false);
 
     function clearPath(): undefined {
         setMap(prev => prev.map(line => line.replace(/P/g, ' ')));
@@ -18,8 +19,9 @@ function Controls( {map, setMap, stats, setStats, weight, setWeight, showAllPath
         return undefined;
     }
 
-    function genNewMaze(): undefined {
-        setMap(newMaze(141,141, mazeAlgorithm).slice());
+    async function genNewMaze(): Promise<undefined> {
+        const newMap = await newMaze(141, 141, mazeAlgorithm, slowMazeBuild, setMap);
+        setMap(newMap.slice());
         setStats({ cost: 0, length: 0, path: []});
         return undefined;
     }
@@ -70,6 +72,10 @@ function Controls( {map, setMap, stats, setStats, weight, setWeight, showAllPath
         setShowAllPaths(e.target.checked);
     }
 
+    function handleSlowMaze(e: React.ChangeEvent<HTMLInputElement>) {
+        setSlowMazeBuild(e.target.checked);
+    }
+
     function handleMazeAlgorithm(e: React.ChangeEvent<HTMLSelectElement>) {
         setMazeAlgorithm(e.target.value as MazeAlgorithm);
     }
@@ -97,10 +103,10 @@ function Controls( {map, setMap, stats, setStats, weight, setWeight, showAllPath
                 <div className="row mb-4">
                     <div className="col-7">
                         <label className="switch">
-                            <input type="checkbox" id="showAll" onChange={handleShowAllPaths} />
+                            <input type="checkbox" id="slowMaze" onChange={handleSlowMaze} />
                             <div className="slider round"></div>
                         </label>
-                        <label className="slider-text">Show All Considered Paths</label>
+                        <label className="slider-text">Slow Maze Build</label>
                     </div>
                     <div className="col-1">Algo:</div>
                     <div className="col-3">
@@ -109,6 +115,15 @@ function Controls( {map, setMap, stats, setStats, weight, setWeight, showAllPath
                                 <option key={algorithm} value={algorithm}>{algorithm}</option>
                             ))}
                         </select>
+                    </div>
+                </div>
+                <div className="row mb-4">
+                    <div className="col-7">
+                        <label className="switch">
+                            <input type="checkbox" id="showAll" onChange={handleShowAllPaths} />
+                            <div className="slider round"></div>
+                        </label>
+                        <label className="slider-text">Show All Considered Paths</label>
                     </div>
                 </div>
                 <div className="row">

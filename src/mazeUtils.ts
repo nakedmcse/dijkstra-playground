@@ -1,5 +1,6 @@
 import {CompletedPath, MazeAlgorithm, Node, PathStats, Point, Weight} from "./types";
 import {MinPriorityQueue} from "@datastructures-js/priority-queue";
+import React from "react";
 
 export function findGiven(grid: string[], g: string): Point {
     for (let y = 0; y < grid.length; y++) {
@@ -9,8 +10,13 @@ export function findGiven(grid: string[], g: string): Point {
     }
     return {x:-1, y:-1};
 }
+
 export function cell(g: string[], x: number, y: number, c: string): void {
     g[y] = g[y].substring(0,x) + c + g[y].substring(x+1);
+}
+
+export async function sleep(millis: number = 0) {
+    return new Promise(resolve => setTimeout(resolve, millis));
 }
 
 export function dijkstra(grid: string[], weights: Weight, start: Point, end: Point, showAll: boolean): CompletedPath {
@@ -93,17 +99,17 @@ export function getWeight(w: Weight, d: string): number {
     }
 }
 
-export function newMaze(width: number, height: number, type: MazeAlgorithm): string[] {
+export async function newMaze(width: number, height: number, type: MazeAlgorithm, showBuild: boolean, setMap: React.Dispatch<React.SetStateAction<string[]>>|null): Promise<string[]> {
     switch (type) {
         case MazeAlgorithm.ENTOMBED:
-            return newMazeEntombed(width, height);
+            return newMazeEntombed(width, height, showBuild, setMap);
         case MazeAlgorithm.STACKDFS:
         default:
-            return newMazeDFS(width, height);
+            return newMazeDFS(width, height, showBuild, setMap);
     }
 }
 
-export function newMazeEntombed(width: number, height: number): string[] {
+export async function newMazeEntombed(width: number, height: number, showBuild: boolean, setMap: React.Dispatch<React.SetStateAction<string[]>>|null): Promise<string[]> {
     // Entombed maze generator
 
     // Generate lookup value
@@ -162,12 +168,16 @@ export function newMazeEntombed(width: number, height: number): string[] {
                         if(grid[y][x]===' ') cell(grid, x, y, '#');
                     }
             }
+            if(showBuild) {
+                await sleep(10);
+                if(setMap) setMap(grid.slice());
+            }
         }
     }
     return grid;
 }
 
-export function newMazeDFS(width: number, height: number): string[] {
+export async function newMazeDFS(width: number, height: number, showBuild: boolean, setMap: React.Dispatch<React.SetStateAction<string[]>>|null): Promise<string[]> {
     // Stack DFS maze generator
 
     // Find neighboring movement options
@@ -207,6 +217,10 @@ export function newMazeDFS(width: number, height: number): string[] {
                 const i = Math.floor(Math.random() * n.length);
                 cell(grid, current.x+n[i].x, current.y+n[i].y, ' ');  // open target
                 cell(grid, current.x+(n[i].x/2), current.y+(n[i].y/2), ' ');  // open corridor
+                if(showBuild) {
+                    await sleep(10);
+                    if(setMap) setMap(grid.slice());
+                }
                 visited[current.y+n[i].y][current.x+n[i].x] = true;
                 q.push({x:current.x+n[i].x, y:current.y+n[i].y});
             }
