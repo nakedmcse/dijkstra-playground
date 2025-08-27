@@ -114,6 +114,11 @@ export async function newMaze(width: number, height: number, type: MazeAlgorithm
 export async function newMazePrims(width: number, height: number, showBuild: boolean, setMap: React.Dispatch<React.SetStateAction<string[]>>|null): Promise<string[]> {
     // Prims maze generator
 
+    // Check valid target
+    function isValid (x: number, y: number, g:string[], v:boolean[][]): boolean {
+        return x > 0 && y > 0 && x < g[0].length - 1 && y < g.length - 1 && g[y][x] === '#' && !v[y][x];
+    }
+
     // Find neighboring movement options
     function neighbors(g: string[], p: Point, v: boolean[][]): Point[] {
         const retval:Point[] = [];
@@ -123,12 +128,9 @@ export async function newMazePrims(width: number, height: number, showBuild: boo
             { x: 2, y: 0 },
             { x: -2, y: 0 }
         ];
-        function isValid (x: number, y: number): boolean {
-            return x > 0 && y > 0 && x < g[0].length - 1 && y < g.length - 1 && g[y][x] === '#' && !v[y][x];
-        }
 
         for (const d of directions) {
-            if(isValid(p.x + d.x, p.y + d.y)) retval.push({x:d.x, y:d.y});
+            if(isValid(p.x + d.x, p.y + d.y, g, v)) retval.push({x:d.x, y:d.y});
         }
 
         return retval;
@@ -137,18 +139,24 @@ export async function newMazePrims(width: number, height: number, showBuild: boo
     // Create filled grid and add start/end
     const grid = Array.from({ length: height }, () => "#".repeat(width));
     cell(grid, 1, 1, 'S');  // Start at 1,1
-    cell(grid, width-2, height-2, 'E');  // End at width-1,height-1
 
-    let current: Point = {x:1,y:1};
+    const current: Point = {x:1,y:1};
     const visited: boolean[][] = Array.from({ length: height }, () => Array(width).fill(false));
     visited[1][1] = true;
     const walls: Wall[] = []
-    for (const dest of neighbors(grid, current, visited)) walls.push({point: current, dest: dest});
+    for (const dest of neighbors(grid, current, visited)) walls.push({point: {x:current.x, y:current.y}, dest: {x:dest.x, y:dest.y}});
 
     // Run prims algorithm on walls
     while(walls.length > 0) {
         const i = Math.floor(Math.random() * walls.length);
-        cell(grid, walls[i].point.x+walls[i].dest.x, walls[i].point.y+walls[i].dest.y, ' ');  // Remove destination
+        current.x = walls[i].point.x + walls[i].dest.x;
+        current.y = walls[i].point.y + walls[i].dest.y;
+        if(!isValid(current.x, current.y, grid, visited)) {
+            walls.splice(i, 1);  // Check necessary because grid most likely has changed from when wall was added
+            continue;
+        }
+
+        cell(grid, current.x, current.y, ' ');  // Remove destination
         cell(grid, walls[i].point.x+(walls[i].dest.x/2), walls[i].point.y+(walls[i].dest.y/2), ' ');  // Remove corridor
 
         if(showBuild) {
@@ -156,13 +164,12 @@ export async function newMazePrims(width: number, height: number, showBuild: boo
             if(setMap) setMap(grid.slice());
         }
 
-        current.x = walls[i].point.x + walls[i].dest.x;
-        current.y = walls[i].point.y + walls[i].dest.y;
         visited[current.y][current.x] = true;
         walls.splice(i,1);
-        for (const dest of neighbors(grid, current, visited)) walls.push({point: current, dest: dest});
+        for (const dest of neighbors(grid, current, visited)) walls.push({point: {x:current.x, y:current.y}, dest: {x:dest.x, y:dest.y}});
     }
 
+    cell(grid, width-2, height-2, 'E');  // End at width-1,height-1
     return grid;
 }
 
