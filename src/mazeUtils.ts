@@ -1,4 +1,4 @@
-import {CompletedPath, MazeAlgorithm, Node, PathStats, Point, Weight} from "./types";
+import {CompletedPath, MazeAlgorithm, Node, PathStats, Point, Wall, Weight} from "./types";
 import {MinPriorityQueue} from "@datastructures-js/priority-queue";
 import React from "react";
 
@@ -103,10 +103,67 @@ export async function newMaze(width: number, height: number, type: MazeAlgorithm
     switch (type) {
         case MazeAlgorithm.ENTOMBED:
             return newMazeEntombed(width, height, showBuild, setMap);
+        case MazeAlgorithm.PRIMS:
+            return newMazePrims(width, height, showBuild, setMap);
         case MazeAlgorithm.STACKDFS:
         default:
             return newMazeDFS(width, height, showBuild, setMap);
     }
+}
+
+export async function newMazePrims(width: number, height: number, showBuild: boolean, setMap: React.Dispatch<React.SetStateAction<string[]>>|null): Promise<string[]> {
+    // Prims maze generator
+
+    // Find neighboring movement options
+    function neighbors(g: string[], p: Point, v: boolean[][]): Point[] {
+        const retval:Point[] = [];
+        const directions = [
+            { x: 0, y: 2 },
+            { x: 0, y: -2 },
+            { x: 2, y: 0 },
+            { x: -2, y: 0 }
+        ];
+        function isValid (x: number, y: number): boolean {
+            return x > 0 && y > 0 && x < g[0].length - 1 && y < g.length - 1 && g[y][x] === '#' && !v[y][x];
+        }
+
+        for (const d of directions) {
+            if(isValid(p.x + d.x, p.y + d.y)) retval.push({x:d.x, y:d.y});
+        }
+
+        return retval;
+    }
+
+    // Create filled grid and add start/end
+    const grid = Array.from({ length: height }, () => "#".repeat(width));
+    cell(grid, 1, 1, 'S');  // Start at 1,1
+    cell(grid, width-2, height-2, 'E');  // End at width-1,height-1
+
+    let current: Point = {x:1,y:1};
+    const visited: boolean[][] = Array.from({ length: height }, () => Array(width).fill(false));
+    visited[1][1] = true;
+    const walls: Wall[] = []
+    for (const dest of neighbors(grid, current, visited)) walls.push({point: current, dest: dest});
+
+    // Run prims algorithm on walls
+    while(walls.length > 0) {
+        const i = Math.floor(Math.random() * walls.length);
+        cell(grid, walls[i].point.x+walls[i].dest.x, walls[i].point.y+walls[i].dest.y, ' ');  // Remove destination
+        cell(grid, walls[i].point.x+(walls[i].dest.x/2), walls[i].point.y+(walls[i].dest.y/2), ' ');  // Remove corridor
+
+        if(showBuild) {
+            await sleep(10);
+            if(setMap) setMap(grid.slice());
+        }
+
+        current.x = walls[i].point.x + walls[i].dest.x;
+        current.y = walls[i].point.y + walls[i].dest.y;
+        visited[current.y][current.x] = true;
+        walls.splice(i,1);
+        for (const dest of neighbors(grid, current, visited)) walls.push({point: current, dest: dest});
+    }
+
+    return grid;
 }
 
 export async function newMazeEntombed(width: number, height: number, showBuild: boolean, setMap: React.Dispatch<React.SetStateAction<string[]>>|null): Promise<string[]> {
