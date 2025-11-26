@@ -1,5 +1,5 @@
 import {CompletedPath, MazeAlgorithm, Node, PathStats, Point, Wall, Weight} from "./types";
-import {MinPriorityQueue} from "@datastructures-js/priority-queue";
+import {MinHeap} from "./heap";
 import React from "react";
 
 export function findGiven(grid: string[], g: string): Point {
@@ -36,7 +36,7 @@ export function dijkstra(grid: string[], weights: Weight, start: Point, end: Poi
         x >= 0 && y >= 0 && x < cols && y < rows && grid[y][x] !== '#';
 
     // Priority queue to manage nodes to process, ordered by cost
-    const pq = new MinPriorityQueue<Node>(r => r.cost);
+    const pq = new MinHeap<Node>((a,b) => a.cost - b.cost);
     const visited: boolean[][] = Array.from({ length: rows }, () => Array(cols).fill(false));
     const costs: number[][] = Array.from({ length: rows }, () => Array(cols).fill(Infinity));
 
@@ -45,7 +45,7 @@ export function dijkstra(grid: string[], weights: Weight, start: Point, end: Poi
 
     while (!pq.isEmpty()) {
         // Extract node with smallest cost
-        const { point, cost, length, path } = pq.dequeue() ?? { point: {x:-1,y:-1}, cost: Infinity, length: Infinity, path: [] };
+        const { point, cost, length, path } = pq.extract() ?? { point: {x:-1,y:-1}, cost: Infinity, length: Infinity, path: [] };
         const { x, y } = point;
 
         if (visited[y][x]) continue; // Skip if already processed
