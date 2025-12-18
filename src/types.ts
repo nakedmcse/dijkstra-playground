@@ -8,5 +8,6 @@ export type CompletedPath = { grid: string[], stats: PathStats };
 export enum MazeAlgorithm {
     STACKDFS = 'Stack DFS',
     ENTOMBED = 'Entombed',
-    PRIMS = 'Prims'
+    PRIMS = 'Prims',
+    AOC = 'AoC'
 }

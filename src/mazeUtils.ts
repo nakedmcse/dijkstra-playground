@@ -105,10 +105,39 @@ export async function newMaze(width: number, height: number, type: MazeAlgorithm
             return newMazeEntombed(width, height, showBuild, setMap);
         case MazeAlgorithm.PRIMS:
             return newMazePrims(width, height, showBuild, setMap);
+        case MazeAlgorithm.AOC:
+            return newMazeAoC(width, height, showBuild, setMap);
         case MazeAlgorithm.STACKDFS:
         default:
             return newMazeDFS(width, height, showBuild, setMap);
     }
+}
+
+export async function newMazeAoC(width: number, height: number, showBuild: boolean, setMap: React.Dispatch<React.SetStateAction<string[]>>|null): Promise<string[]> {
+    // Advent of Code maze generator
+
+    // Find if a given x/y is wall
+    function isWall(x: number, y: number, base: number) {
+        const hash = ((x*x) + (3*x) + (2*x*y) + y + (y*y) + base).toString(2);
+        return hash.split('').filter(x => x === '1').length % 2 !== 0;
+    }
+
+    // Create filled grid and add start/end
+    const grid = Array.from({ length: height }, () => "#".repeat(width));
+
+    for (let y = 1; y < height-1; y++) {
+        for (let x = 1; x < width-1; x++) {
+            if(!isWall(x, y, 1358)) cell(grid, x, y, ' ');  // Remove destination if not wall
+            if(showBuild) {
+                await sleep(10);
+                if(setMap) setMap(grid.slice());
+            }
+        }
+    }
+
+    cell(grid, 1, 1, 'S');  // Start at 1,1
+    cell(grid, width-2, height-2, 'E');  // End at width-1,height-1
+    return grid;
 }
 
 export async function newMazePrims(width: number, height: number, showBuild: boolean, setMap: React.Dispatch<React.SetStateAction<string[]>>|null): Promise<string[]> {
