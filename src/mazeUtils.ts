@@ -107,6 +107,8 @@ export async function newMaze(width: number, height: number, type: MazeAlgorithm
             return newMazePrims(width, height, showBuild, setMap);
         case MazeAlgorithm.AOC:
             return newMazeAoC(width, height, showBuild, setMap);
+        case MazeAlgorithm.BINARYTREE:
+            return newMazeBinaryTree(width, height, showBuild, setMap);
         case MazeAlgorithm.STACKDFS:
         default:
             return newMazeDFS(width, height, showBuild, setMap);
@@ -128,6 +130,33 @@ export async function newMazeAoC(width: number, height: number, showBuild: boole
     for (let y = 1; y < height-1; y++) {
         for (let x = 1; x < width-1; x++) {
             if(!isWall(x, y, 1358)) cell(grid, x, y, ' ');  // Remove destination if not wall
+            if(showBuild) {
+                await sleep(10);
+                if(setMap) setMap(grid.slice());
+            }
+        }
+    }
+
+    cell(grid, 1, 1, 'S');  // Start at 1,1
+    cell(grid, width-2, height-2, 'E');  // End at width-1,height-1
+    return grid;
+}
+
+export async function newMazeBinaryTree(width: number, height: number, showBuild: boolean, setMap: React.Dispatch<React.SetStateAction<string[]>>|null): Promise<string[]> {
+    // Binary Tree maze generator
+
+    // Create filled grid and add start/end
+    const grid = Array.from({ length: height }, () => "#".repeat(width));
+
+    for (let y = 1; y < height-1; y += 2) {
+        for (let x = 1; x < width-1; x += 2) {
+            const dirs = [];
+            if (y > 0 && y < height-2) dirs.push({ x: 0, y: 1 });
+            if (x > 0 && x < width-2) dirs.push({ x: 1, y: 0 });
+            if (dirs.length === 0) continue;
+            const d = dirs[Math.floor(Math.random() * dirs.length)];
+            cell(grid, x, y, ' ');
+            cell(grid, x+d.x, y+d.y, ' ');
             if(showBuild) {
                 await sleep(10);
                 if(setMap) setMap(grid.slice());

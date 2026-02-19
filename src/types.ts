@@ -9,5 +9,6 @@ export enum MazeAlgorithm {
     STACKDFS = 'Stack DFS',
     ENTOMBED = 'Entombed',
     PRIMS = 'Prims',
-    AOC = 'AoC'
+    AOC = 'AoC',
+    BINARYTREE = 'Binary Tree',
 }
