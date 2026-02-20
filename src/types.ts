@@ -11,4 +11,5 @@ export enum MazeAlgorithm {
     PRIMS = 'Prims',
     AOC = 'AoC',
     BINARYTREE = 'Binary Tree',
+    SIDEWINDER = 'Sidewinder',
 }

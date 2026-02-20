@@ -109,6 +109,8 @@ export async function newMaze(width: number, height: number, type: MazeAlgorithm
             return newMazeAoC(width, height, showBuild, setMap);
         case MazeAlgorithm.BINARYTREE:
             return newMazeBinaryTree(width, height, showBuild, setMap);
+        case MazeAlgorithm.SIDEWINDER:
+            return newMazeSidewinder(width, height, showBuild, setMap);
         case MazeAlgorithm.STACKDFS:
         default:
             return newMazeDFS(width, height, showBuild, setMap);
@@ -157,6 +159,38 @@ export async function newMazeBinaryTree(width: number, height: number, showBuild
             const d = dirs[Math.floor(Math.random() * dirs.length)];
             cell(grid, x, y, ' ');
             cell(grid, x+d.x, y+d.y, ' ');
+            if(showBuild) {
+                await sleep(10);
+                if(setMap) setMap(grid.slice());
+            }
+        }
+    }
+
+    cell(grid, 1, 1, 'S');  // Start at 1,1
+    cell(grid, width-2, height-2, 'E');  // End at width-1,height-1
+    return grid;
+}
+
+export async function newMazeSidewinder(width: number, height: number, showBuild: boolean, setMap: React.Dispatch<React.SetStateAction<string[]>>|null): Promise<string[]> {
+    // Sidewinder maze generator
+
+    // Create filled grid and add start/end
+    const grid = Array.from({ length: height }, () => "#".repeat(width));
+
+    for (let y = 1; y < height-1; y += 2) {
+        let runStart = 1;
+        for (let x = 1; x < width-1; x += 2) {
+            cell(grid, x, y, ' ');
+            if (y > 1 && (x+2 >= width-1 || Math.random() < 0.5)) {
+                const chosenX = runStart + 2 * Math.floor(Math.random() * (((x - runStart) / 2) + 1));
+                cell(grid, chosenX, y-1, ' ');
+                runStart = x + 2;
+            }
+            else if (x+1 < width-1) {
+                cell(grid, x+1, y, ' ');
+                cell(grid, x+2, y, ' ');
+            }
+
             if(showBuild) {
                 await sleep(10);
                 if(setMap) setMap(grid.slice());
