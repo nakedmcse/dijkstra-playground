@@ -12,4 +12,5 @@ export enum MazeAlgorithm {
     AOC = 'AoC',
     BINARYTREE = 'Binary Tree',
     SIDEWINDER = 'Sidewinder',
+    HUNTANDKILL = 'Hunt and Kill',
 }

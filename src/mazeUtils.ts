@@ -111,6 +111,8 @@ export async function newMaze(width: number, height: number, type: MazeAlgorithm
             return newMazeBinaryTree(width, height, showBuild, setMap);
         case MazeAlgorithm.SIDEWINDER:
             return newMazeSidewinder(width, height, showBuild, setMap);
+        case MazeAlgorithm.HUNTANDKILL:
+            return newMazeHuntAndKill(width, height, showBuild, setMap);
         case MazeAlgorithm.STACKDFS:
         default:
             return newMazeDFS(width, height, showBuild, setMap);
@@ -137,6 +139,60 @@ export async function newMazeAoC(width: number, height: number, showBuild: boole
                 if(setMap) setMap(grid.slice());
             }
         }
+    }
+
+    cell(grid, 1, 1, 'S');  // Start at 1,1
+    cell(grid, width-2, height-2, 'E');  // End at width-1,height-1
+    return grid;
+}
+
+export async function newMazeHuntAndKill(width: number, height: number, showBuild: boolean, setMap: React.Dispatch<React.SetStateAction<string[]>>|null): Promise<string[]> {
+    // Hunt and Kill maze generator
+
+    // Create filled grid and add start/end
+    const grid = Array.from({ length: height }, () => "#".repeat(width));
+
+    const directions = [{x:0,y:2},{x:0,y:-2},{x:2,y:0},{x:-2,y:0}];
+
+    async function walk(wx: number, wy: number): Promise<null | number[]> {
+        const d = directions[Math.floor(Math.random() * directions.length)];
+        const {nx, ny} = {nx:wx + d.x, ny:wy + d.y};
+        if (nx < 1 || nx > width-2 || ny < 1 || ny > height-2 || grid[ny][nx] === ' ') return null;
+        cell(grid, wx, wy, ' ');
+        cell(grid, wx + (d.x/2), wy + (d.y/2), ' ');
+        if(showBuild) {
+            await sleep(10);
+            if(setMap) setMap(grid.slice());
+        }
+        return [nx, ny];
+    }
+
+    function hunt(): null | number[] {
+        for (let hy = 1; hy < height-1; hy += 2) {
+            for (let hx = 1; hx < width - 1; hx += 2) {
+                if(grid[hy][hx] === ' ') continue;
+                const validMoves = [];
+                if (hy+2 < height-1 && grid[hy+2][hx] === ' ') validMoves.push({x:0,y:1});
+                if (hy-2 > 0 && grid[hy-2][hx] === ' ') validMoves.push({x:0,y:-1});
+                if (hx+2 < width-1 && grid[hy][hx+2] === ' ') validMoves.push({x:1,y:0});
+                if (hx-2 > 0 && grid[hy][hx-2] === ' ') validMoves.push({x:-1,y:0});
+                if (validMoves.length === 0) continue;
+                const d = validMoves[Math.floor(Math.random() * validMoves.length)];
+                const {nx, ny} = {nx:hx+d.x, ny:hy+d.y};
+                cell(grid, nx, ny, ' ');
+                cell(grid, hx, hy, ' ');
+                return [hx, hy];
+            }
+        }
+        return null;
+    }
+
+    let current = [1,1];
+    while (true) {
+        let next = await walk(current[0], current[1]);
+        if (next === null) next = hunt();
+        if (next === null) break;
+        current = next;
     }
 
     cell(grid, 1, 1, 'S');  // Start at 1,1
