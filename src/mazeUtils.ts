@@ -113,6 +113,8 @@ export async function newMaze(width: number, height: number, type: MazeAlgorithm
             return newMazeSidewinder(width, height, showBuild, setMap);
         case MazeAlgorithm.HUNTANDKILL:
             return newMazeHuntAndKill(width, height, showBuild, setMap);
+        case MazeAlgorithm.GROWINGTREE:
+            return newMazeGrowingTree(width, height, showBuild, setMap);
         case MazeAlgorithm.STACKDFS:
         default:
             return newMazeDFS(width, height, showBuild, setMap);
@@ -137,6 +139,45 @@ export async function newMazeAoC(width: number, height: number, showBuild: boole
             if(showBuild) {
                 await sleep(10);
                 if(setMap) setMap(grid.slice());
+            }
+        }
+    }
+
+    cell(grid, 1, 1, 'S');  // Start at 1,1
+    cell(grid, width-2, height-2, 'E');  // End at width-1,height-1
+    return grid;
+}
+
+export async function newMazeGrowingTree(width: number, height: number, showBuild: boolean, setMap: React.Dispatch<React.SetStateAction<string[]>>|null): Promise<string[]> {
+    // Growing Tree maze generator
+
+    const shuffle = <T>(array: T[]): T[] => {
+        return array.sort(() => Math.random() - 0.5);
+    }
+    const isValid = (x:number, y:number): boolean => {
+        return (x>0 && y>0 && x < width && y < height && grid[y][x] === '#');
+    }
+    // Create filled grid and add start/end
+    const grid = Array.from({ length: height }, () => "#".repeat(width));
+    const directions = [{x:0,y:2},{x:0,y:-2},{x:2,y:0},{x:-2,y:0}];
+
+    const cellList = [];
+    cellList.push({x:1,y:1});
+
+    while(cellList.length > 0) {
+        const {x, y} = cellList.pop() ?? {x:-1,y:-1};
+        cell(grid, x, y, ' ');
+        for(const d of shuffle(directions)) {
+            const nx: number = x + d.x;
+            const ny: number = y + d.y;
+            if(isValid(nx,ny)) {
+                cell(grid, nx, ny, ' ');
+                cell(grid, x+(d.x/2), y+(d.y/2), ' ')
+                if(showBuild) {
+                    await sleep(10);
+                    if(setMap) setMap(grid.slice());
+                }
+                cellList.push({x:nx,y:ny});
             }
         }
     }
