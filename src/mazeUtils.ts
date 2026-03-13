@@ -115,9 +115,11 @@ export async function newMaze(width: number, height: number, type: MazeAlgorithm
             return newMazeHuntAndKill(width, height, showBuild, setMap);
         case MazeAlgorithm.GROWINGTREE:
             return newMazeGrowingTree(width, height, showBuild, setMap);
+        case MazeAlgorithm.STACKBFS:
+            return newMazeDFS(width, height, showBuild, true, setMap);
         case MazeAlgorithm.STACKDFS:
         default:
-            return newMazeDFS(width, height, showBuild, setMap);
+            return newMazeDFS(width, height, showBuild, false, setMap);
     }
 }
 
@@ -430,7 +432,7 @@ export async function newMazeEntombed(width: number, height: number, showBuild: 
     return grid;
 }
 
-export async function newMazeDFS(width: number, height: number, showBuild: boolean, setMap: React.Dispatch<React.SetStateAction<string[]>>|null): Promise<string[]> {
+export async function newMazeDFS(width: number, height: number, showBuild: boolean, useBFS: boolean, setMap: React.Dispatch<React.SetStateAction<string[]>>|null): Promise<string[]> {
     // Stack DFS maze generator
 
     // Find neighboring movement options
@@ -463,7 +465,7 @@ export async function newMazeDFS(width: number, height: number, showBuild: boole
     // DFS from start point
     try {
         while (q.length > 0) {
-            current = q.pop() ?? {x:0,y:0};
+            current = (useBFS ? q.shift() : q.pop()) ?? {x:0,y:0};
             const n = neighbors(grid, current, visited);
             if(n.length > 0) {
                 q.push(current);
@@ -471,7 +473,7 @@ export async function newMazeDFS(width: number, height: number, showBuild: boole
                 cell(grid, current.x+n[i].x, current.y+n[i].y, ' ');  // open target
                 cell(grid, current.x+(n[i].x/2), current.y+(n[i].y/2), ' ');  // open corridor
                 if(showBuild) {
-                    await sleep(10);
+                    await sleep(5);
                     if(setMap) setMap(grid.slice());
                 }
                 visited[current.y+n[i].y][current.x+n[i].x] = true;
