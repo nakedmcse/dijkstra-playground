@@ -117,6 +117,8 @@ export async function newMaze(width: number, height: number, type: MazeAlgorithm
             return newMazeGrowingTree(width, height, showBuild, setMap);
         case MazeAlgorithm.STACKBFS:
             return newMazeDFS(width, height, showBuild, true, setMap);
+        case MazeAlgorithm.RECURSIVEDIV:
+            return newMazeRecursiveDivision(width, height, showBuild, setMap);
         case MazeAlgorithm.STACKDFS:
         default:
             return newMazeDFS(width, height, showBuild, false, setMap);
@@ -296,6 +298,73 @@ export async function newMazeSidewinder(width: number, height: number, showBuild
             }
         }
     }
+
+    cell(grid, 1, 1, 'S');  // Start at 1,1
+    cell(grid, width-2, height-2, 'E');  // End at width-1,height-1
+    return grid;
+}
+
+export async function newMazeRecursiveDivision(width: number, height: number, showBuild: boolean, setMap: React.Dispatch<React.SetStateAction<string[]>>|null): Promise<string[]> {
+    // Recursive division maze generator
+
+    // Create empty grid, carve cells and add start/end
+    const grid = Array.from({ length: height }, (_, y) =>
+        y === 0 || y === height - 1
+            ? "#".repeat(width)
+            : "#" + " ".repeat(width - 2) + "#"
+    );
+
+    function isVertical(w: number, h: number): boolean {
+        const diff = w - h;
+        if (diff > 0) return true;
+        if (diff < 0) return false;
+        return Math.random() > 0.5;
+    }
+
+    function randInRange(min: number, max: number, even: boolean): number {
+        const retval = Math.floor(Math.random() * (max - min) + min);
+        return retval % 2 === (even ? 0 : 1) ? retval :
+            retval < max ? retval+1 : retval-1;
+    }
+
+    async function divide(x: number, y: number, w: number, h: number, vertical: boolean) {
+        if (vertical && w < 3) return;
+        if (!vertical && h < 3) return;
+
+        if(showBuild) {
+            await sleep(5);
+            if(setMap) setMap(grid.slice());
+        }
+
+        // wall draw point
+        const wx = vertical ? randInRange(x + 1, x + w - 2, true) : x;
+        const wy = vertical ? y : randInRange(y + 1, y + h - 2, true);
+
+        // passage through wall point
+        const px = vertical ? wx : randInRange(x, x + w - 1, false);
+        const py = vertical ? randInRange(y, y + h - 1, false) : wy;
+
+        const [dx, dy] = vertical ? [0,1] : [1,0];
+        const wlen = vertical ? h : w;
+
+        // draw wall, except for passage
+        let [cx, cy] = [wx, wy];
+        for (let i = 0; i < wlen; i++) {
+            if (cx !== px || cy !== py) cell(grid, cx, cy, '#');
+            cx += dx;
+            cy += dy;
+        }
+
+        // recurse into subdivisions
+        const [uw, uh] = vertical ? [wx - x, h] : [w, wy - y];
+        await divide(x, y, uw, uh, isVertical(uw, uh));
+
+        const [nx, ny] = vertical ? [wx + 1, y] : [x, wy + 1];
+        const [lw, lh] = vertical ? [x + w - nx, h] : [w, y + h - ny];
+        await divide(nx, ny, lw, lh, isVertical(lw, lh));
+    }
+
+    await divide(0, 0, width, height, isVertical(width, height));
 
     cell(grid, 1, 1, 'S');  // Start at 1,1
     cell(grid, width-2, height-2, 'E');  // End at width-1,height-1

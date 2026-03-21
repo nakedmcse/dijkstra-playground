@@ -15,4 +15,5 @@ export enum MazeAlgorithm {
     SIDEWINDER = 'Sidewinder',
     HUNTANDKILL = 'Hunt and Kill',
     GROWINGTREE = 'Growing Tree',
+    RECURSIVEDIV = 'Recursive Division',
 }
