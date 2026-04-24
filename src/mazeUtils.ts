@@ -119,6 +119,8 @@ export async function newMaze(width: number, height: number, type: MazeAlgorithm
             return newMazeDFS(width, height, showBuild, true, setMap);
         case MazeAlgorithm.RECURSIVEDIV:
             return newMazeRecursiveDivision(width, height, showBuild, setMap);
+        case MazeAlgorithm.ELLERS:
+            return newMazeEllers(width, height, showBuild, setMap);
         case MazeAlgorithm.STACKDFS:
         default:
             return newMazeDFS(width, height, showBuild, false, setMap);
@@ -498,6 +500,105 @@ export async function newMazeEntombed(width: number, height: number, showBuild: 
             }
         }
     }
+    return grid;
+}
+
+export async function newMazeEllers(width: number, height: number, showBuild: boolean, setMap: React.Dispatch<React.SetStateAction<string[]>>|null): Promise<string[]> {
+    // Ellers maze generator
+
+    const grid = Array.from({ length: height }, () => "#".repeat(width));
+
+    let nextSet = 1;
+    let sets = new Map<number, number>();
+
+    const getSet = (x: number) => {
+        if (!sets.has(x)) sets.set(x, nextSet++);
+        return sets.get(x)!;
+    };
+
+    const mergeSets = (from: number, into: number) => {
+        for (const [x, setId] of sets.entries()) {
+            if (setId === from) sets.set(x, into);
+        }
+    };
+
+    for (let y = 1; y < height - 1; y += 2) {
+        const isLastRow = y >= height - 2;
+
+        // Ensure every cell in this row has a set
+        for (let x = 1; x < width - 1; x += 2) {
+            getSet(x);
+            cell(grid, x, y, " ");
+        }
+
+        // Randomly join adjacent cells horizontally
+        for (let x = 1; x < width - 3; x += 2) {
+            const currentSet = getSet(x);
+            const rightSet = getSet(x + 2);
+
+            const shouldJoin = isLastRow || Math.random() < 0.5;
+
+            if (currentSet !== rightSet && shouldJoin) {
+                cell(grid, x + 1, y, " ");
+                mergeSets(rightSet, currentSet);
+
+                if (showBuild) {
+                    await sleep(10);
+                    if (setMap) setMap(grid.slice());
+                }
+            }
+        }
+
+        if (isLastRow) break;
+
+        // For each set, carve at least one vertical connection downward
+        const setGroups = new Map<number, number[]>();
+
+        for (let x = 1; x < width - 1; x += 2) {
+            const setId = getSet(x);
+            if (!setGroups.has(setId)) setGroups.set(setId, []);
+            setGroups.get(setId)!.push(x);
+        }
+
+        const nextRowSets = new Map<number, number>();
+
+        for (const [setId, xs] of setGroups.entries()) {
+            let carvedDown = false;
+
+            for (const x of xs) {
+                const shouldCarveDown = Math.random() < 0.5;
+
+                if (shouldCarveDown) {
+                    cell(grid, x, y + 1, " ");
+                    nextRowSets.set(x, setId);
+                    carvedDown = true;
+
+                    if (showBuild) {
+                        await sleep(10);
+                        if (setMap) setMap(grid.slice());
+                    }
+                }
+            }
+
+            // Ensure every set survives into the next row
+            if (!carvedDown) {
+                const x = xs[Math.floor(Math.random() * xs.length)];
+                cell(grid, x, y + 1, " ");
+                nextRowSets.set(x, setId);
+
+                if (showBuild) {
+                    await sleep(10);
+                    if (setMap) setMap(grid.slice());
+                }
+            }
+        }
+
+        sets = nextRowSets;
+    }
+
+    cell(grid, 1, 1, "S");
+    cell(grid, width - 2, height - 2, "E");
+
     return grid;
 }
 

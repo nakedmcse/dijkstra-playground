@@ -16,4 +16,5 @@ export enum MazeAlgorithm {
     HUNTANDKILL = 'Hunt and Kill',
     GROWINGTREE = 'Growing Tree',
     RECURSIVEDIV = 'Recursive Division',
+    ELLERS = 'Ellers',
 }
