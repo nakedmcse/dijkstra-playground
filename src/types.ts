@@ -17,4 +17,5 @@ export enum MazeAlgorithm {
     GROWINGTREE = 'Growing Tree',
     RECURSIVEDIV = 'Recursive Division',
     ELLERS = 'Ellers',
+    CELLULAR = 'Cellular Automata',
 }

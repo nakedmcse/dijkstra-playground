@@ -121,6 +121,8 @@ export async function newMaze(width: number, height: number, type: MazeAlgorithm
             return newMazeRecursiveDivision(width, height, showBuild, setMap);
         case MazeAlgorithm.ELLERS:
             return newMazeEllers(width, height, showBuild, setMap);
+        case MazeAlgorithm.CELLULAR:
+            return newMazeCellular(width, height, showBuild, setMap);
         case MazeAlgorithm.STACKDFS:
         default:
             return newMazeDFS(width, height, showBuild, false, setMap);
@@ -596,6 +598,191 @@ export async function newMazeEllers(width: number, height: number, showBuild: bo
         sets = nextRowSets;
     }
 
+    cell(grid, 1, 1, "S");
+    cell(grid, width - 2, height - 2, "E");
+
+    return grid;
+}
+
+export async function newMazeCellular(width: number, height: number, showBuild: boolean, setMap: React.Dispatch<React.SetStateAction<string[]>>|null): Promise<string[]> {
+    // Cellular Automata maze generator
+    // Cells with 3 neighbours are born; cells with 5 or greater die
+
+    const evolutionsMax = 400;
+
+    const directions = [
+        { x: 0, y: 1 }, { x: 0, y: -1 }, { x: 1, y: 0 }, { x: -1, y: 0 },
+        { x: 1, y: 1 }, { x: 1, y: -1 }, { x: -1, y: -1 }, { x: -1, y: 1 }
+    ];
+
+    function neighbours(g: string[], p: Point): number {
+        const isValid = (x: number, y: number): boolean => {
+            return x > 0 && y > 0 && x < g[0].length-1 && y < g.length-1 && g[y][x] === '#';
+        }
+
+        let count = 0;
+        for (const d of directions) {
+            if(isValid(p.x+d.x, p.y+d.y)) count++;
+        }
+        return count;
+    }
+
+    function randomPatch(g: string[], p: Point, w: number, h: number, probability: number) {
+        const isValid = (x:number, y:number): boolean => {
+            return x > 0 && y > 0 && x < g[0].length-1 && y < g.length-1 && g[y][x] !== '#';
+        }
+
+        for(let yr = p.y; yr < p.y + h; yr++) {
+            for (let xr = p.x; xr < p.x + w; xr++) {
+                if (isValid(xr,yr) && Math.random() < probability) cell(g, xr, yr, "#");
+            }
+        }
+    }
+
+    function connectSections(g: string[]) {
+        const h = g.length;
+        const w = g[0].length;
+
+        const dirs = [
+            { x: 1, y: 0 },
+            { x: -1, y: 0 },
+            { x: 0, y: 1 },
+            { x: 0, y: -1 },
+        ];
+
+        const isOpen = (c: string) => c === " " || c === "S" || c === "E";
+
+        function labelRegions(): number[][] {
+            const labels = Array.from({ length: h }, () => Array(w).fill(-1));
+            let regionId = 0;
+
+            for (let y = 1; y < h - 1; y++) {
+                for (let x = 1; x < w - 1; x++) {
+                    if (!isOpen(g[y][x]) || labels[y][x] !== -1) continue;
+
+                    const stack = [{ x, y }];
+                    labels[y][x] = regionId;
+
+                    while (stack.length > 0) {
+                        const p = stack.pop()!;
+
+                        for (const d of dirs) {
+                            const nx = p.x + d.x;
+                            const ny = p.y + d.y;
+
+                            if (
+                                nx > 0 && ny > 0 &&
+                                nx < w - 1 && ny < h - 1 &&
+                                isOpen(g[ny][nx]) &&
+                                labels[ny][nx] === -1
+                            ) {
+                                labels[ny][nx] = regionId;
+                                stack.push({ x: nx, y: ny });
+                            }
+                        }
+                    }
+
+                    regionId++;
+                }
+            }
+
+            return labels;
+        }
+
+        function findStartEndRegions(labels: number[][]) {
+            return {
+                start: labels[1][1],
+                end: labels[h - 2][w - 2],
+            };
+        }
+
+        while (true) {
+            const labels = labelRegions();
+            const { start, end } = findStartEndRegions(labels);
+
+            if (start !== -1 && start === end) return;
+
+            const candidates: Point[] = [];
+
+            for (let y = 1; y < h - 1; y++) {
+                for (let x = 1; x < w - 1; x++) {
+                    if (g[y][x] !== "#") continue;
+
+                    const touching = new Set<number>();
+
+                    for (const d of dirs) {
+                        const nx = x + d.x;
+                        const ny = y + d.y;
+                        const label = labels[ny][nx];
+
+                        if (label !== -1) touching.add(label);
+                    }
+
+                    // This wall separates two or more open sections
+                    if (touching.size >= 2) {
+                        candidates.push({ x, y });
+                    }
+                }
+            }
+
+            if (candidates.length === 0) return;
+
+            // Prefer candidates that touch the start region or end region
+            const preferred = candidates.filter(p => {
+                const touching = new Set<number>();
+
+                for (const d of dirs) {
+                    const label = labels[p.y + d.y][p.x + d.x];
+                    if (label !== -1) touching.add(label);
+                }
+
+                return touching.has(start) || touching.has(end);
+            });
+
+            const pool = preferred.length > 0 ? preferred : candidates;
+            const chosen = pool[Math.floor(Math.random() * pool.length)];
+
+            cell(g, chosen.x, chosen.y, " ");
+        }
+    }
+
+    // Create empty maze
+    const grid = Array.from({ length: height }, (_, y) =>
+        y === 0 || y === height - 1
+            ? "#".repeat(width)
+            : "#" + " ".repeat(width - 2) + "#"
+    );
+
+    // Initialize a random patch to start
+    const pp: Point = {x:Math.floor(width / 2) - 10, y:Math.floor(height / 2) - 8};
+    randomPatch(grid, pp, 20, 16, 0.25);
+
+    // Evolve maze
+    for (let i = 0; i < evolutionsMax; i++) {
+        const previousGrid = grid.slice();
+        for(let ye = 1; ye < height-1; ye++) {
+            for (let xe = 1; xe < width-1; xe++) {
+                const n = neighbours(previousGrid, {x:xe, y:ye});
+                if (n === 3 && previousGrid[ye][xe] === ' ') {
+                    // 3 cells surrounding empty => create new
+                    cell(grid,xe,ye,"#");
+                }
+                else if (n > 4 && previousGrid[ye][xe] === '#') {
+                    // more than 4 surrounding wall => destroy
+                    cell(grid,xe,ye," ");
+                }
+            }
+        }
+        if(showBuild && i%10 === 0) {
+            await sleep(5);
+            if(setMap) setMap(grid.slice());
+        }
+    }
+
+    // Make sure start and end are open
+    cell(grid, 1, 1, "S");
+    cell(grid, width - 2, height - 2, "E");
+    connectSections(grid);
     cell(grid, 1, 1, "S");
     cell(grid, width - 2, height - 2, "E");
 
