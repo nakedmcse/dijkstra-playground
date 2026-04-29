@@ -543,12 +543,12 @@ export async function newMazeEllers(width: number, height: number, showBuild: bo
             if (currentSet !== rightSet && shouldJoin) {
                 cell(grid, x + 1, y, " ");
                 mergeSets(rightSet, currentSet);
-
-                if (showBuild) {
-                    await sleep(10);
-                    if (setMap) setMap(grid.slice());
-                }
             }
+        }
+
+        if (showBuild) {
+            await sleep(10);
+            if (setMap) setMap(grid.slice());
         }
 
         if (isLastRow) break;
@@ -574,12 +574,12 @@ export async function newMazeEllers(width: number, height: number, showBuild: bo
                     cell(grid, x, y + 1, " ");
                     nextRowSets.set(x, setId);
                     carvedDown = true;
-
-                    if (showBuild) {
-                        await sleep(10);
-                        if (setMap) setMap(grid.slice());
-                    }
                 }
+            }
+
+            if (showBuild) {
+                await sleep(10);
+                if (setMap) setMap(grid.slice());
             }
 
             // Ensure every set survives into the next row
