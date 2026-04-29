@@ -442,20 +442,21 @@ export async function newMazeEntombed(width: number, height: number, showBuild: 
 
     // Generate lookup value
     function lookupval(g: string[], p: Point): number {
-        const isValid = (x: number, y: number): boolean =>
-            x >= 0 && y >= 0 && x < g[0].length && y < g.length && (g[y][x] === '#');
-        const a: Point = {x: 0, y: -2};
-        const b: Point = {x: 0, y: -1};
-        const c: Point = {x: -1, y: -1};
-        const d: Point = {x: -1, y: 0};
-        const e: Point = {x: -1, y: 1};
+        const isWall = (x: number, y: number): boolean =>
+            x < 0 || y < 0 || x >= g[0].length || y >= g.length || g[y][x] === '#';
+
+        const a = { x: -2, y: 0 };
+        const b = { x: -1, y: 0 };
+        const c = { x: -1, y: -1 };
+        const d = { x: 0,  y: -1 };
+        const e = { x: 1,  y: -1 };
 
         let retval = 0;
-        if(isValid(p.x + a.x, p.y + a.y)) retval += 16;
-        if(isValid(p.x + b.x, p.y + b.y)) retval += 8;
-        if(isValid(p.y + c.y, p.y + c.y)) retval += 4;
-        if(isValid(p.x + d.x, p.y + d.y)) retval += 2;
-        if(isValid(p.x + e.x, p.y + e.y)) retval += 1;
+        if (isWall(p.x + a.x, p.y + a.y)) retval += 16;
+        if (isWall(p.x + b.x, p.y + b.y)) retval += 8;
+        if (isWall(p.x + c.x, p.y + c.y)) retval += 4;
+        if (isWall(p.x + d.x, p.y + d.y)) retval += 2;
+        if (isWall(p.x + e.x, p.y + e.y)) retval += 1;
         return retval;
     }
 
@@ -473,10 +474,8 @@ export async function newMazeEntombed(width: number, height: number, showBuild: 
     // Drunken Make It Work rule
     l[4] = '0';
 
-    // Create filled grid and add start/end
+    // Create filled grid
     const grid = Array.from({ length: height }, () => "#".repeat(width));
-    cell(grid, 1, 1, 'S');  // Start at 1,1
-    cell(grid, width-2, height-2, 'E');  // End at width-1,height-1
 
     // Run entombed algorithm on every location
     for (let y = 1; y < height-1; y++) {
@@ -502,6 +501,10 @@ export async function newMazeEntombed(width: number, height: number, showBuild: 
             }
         }
     }
+
+    cell(grid, 1, 1, 'S');  // Start at 1,1
+    cell(grid, width-2, height-2, 'E');  // End at width-1,height-1
+
     return grid;
 }
 
