@@ -19,6 +19,114 @@ export async function sleep(millis: number = 0) {
     return new Promise(resolve => setTimeout(resolve, millis));
 }
 
+// General function to ensure a connected maze
+export function connectSections(g: string[]) {
+    const h = g.length;
+    const w = g[0].length;
+
+    const dirs = [
+        { x: 1, y: 0 },
+        { x: -1, y: 0 },
+        { x: 0, y: 1 },
+        { x: 0, y: -1 },
+    ];
+
+    const isOpen = (c: string) => c === " " || c === "S" || c === "E";
+
+    function labelRegions(): number[][] {
+        const labels = Array.from({ length: h }, () => Array(w).fill(-1));
+        let regionId = 0;
+
+        for (let y = 1; y < h - 1; y++) {
+            for (let x = 1; x < w - 1; x++) {
+                if (!isOpen(g[y][x]) || labels[y][x] !== -1) continue;
+
+                const stack = [{ x, y }];
+                labels[y][x] = regionId;
+
+                while (stack.length > 0) {
+                    const p = stack.pop()!;
+
+                    for (const d of dirs) {
+                        const nx = p.x + d.x;
+                        const ny = p.y + d.y;
+
+                        if (
+                            nx > 0 && ny > 0 &&
+                            nx < w - 1 && ny < h - 1 &&
+                            isOpen(g[ny][nx]) &&
+                            labels[ny][nx] === -1
+                        ) {
+                            labels[ny][nx] = regionId;
+                            stack.push({ x: nx, y: ny });
+                        }
+                    }
+                }
+
+                regionId++;
+            }
+        }
+
+        return labels;
+    }
+
+    function findStartEndRegions(labels: number[][]) {
+        return {
+            start: labels[1][1],
+            end: labels[h - 2][w - 2],
+        };
+    }
+
+    while (true) {
+        const labels = labelRegions();
+        const { start, end } = findStartEndRegions(labels);
+
+        if (start !== -1 && start === end) return;
+
+        const candidates: Point[] = [];
+
+        for (let y = 1; y < h - 1; y++) {
+            for (let x = 1; x < w - 1; x++) {
+                if (g[y][x] !== "#") continue;
+
+                const touching = new Set<number>();
+
+                for (const d of dirs) {
+                    const nx = x + d.x;
+                    const ny = y + d.y;
+                    const label = labels[ny][nx];
+
+                    if (label !== -1) touching.add(label);
+                }
+
+                // This wall separates two or more open sections
+                if (touching.size >= 2) {
+                    candidates.push({ x, y });
+                }
+            }
+        }
+
+        if (candidates.length === 0) return;
+
+        // Prefer candidates that touch the start region or end region
+        const preferred = candidates.filter(p => {
+            const touching = new Set<number>();
+
+            for (const d of dirs) {
+                const label = labels[p.y + d.y][p.x + d.x];
+                if (label !== -1) touching.add(label);
+            }
+
+            return touching.has(start) || touching.has(end);
+        });
+
+        const pool = preferred.length > 0 ? preferred : candidates;
+        const chosen = pool[Math.floor(Math.random() * pool.length)];
+
+        cell(g, chosen.x, chosen.y, " ");
+    }
+}
+
 export function dijkstra(grid: string[], weights: Weight, start: Point, end: Point, showAll: boolean): CompletedPath {
     const rows = grid.length;
     const cols = grid[0]?.length ?? 0;
@@ -495,15 +603,16 @@ export async function newMazeEntombed(width: number, height: number, showBuild: 
                         if(grid[y][x]===' ') cell(grid, x, y, '#');
                     }
             }
-            if(showBuild) {
-                await sleep(10);
-                if(setMap) setMap(grid.slice());
-            }
+        }
+        if(showBuild) {
+            await sleep(10);
+            if(setMap) setMap(grid.slice());
         }
     }
 
     cell(grid, 1, 1, 'S');  // Start at 1,1
     cell(grid, width-2, height-2, 'E');  // End at width-1,height-1
+    connectSections(grid);
 
     return grid;
 }
@@ -639,113 +748,6 @@ export async function newMazeCellular(width: number, height: number, showBuild: 
             for (let xr = p.x; xr < p.x + w; xr++) {
                 if (isValid(xr,yr) && Math.random() < probability) cell(g, xr, yr, "#");
             }
-        }
-    }
-
-    function connectSections(g: string[]) {
-        const h = g.length;
-        const w = g[0].length;
-
-        const dirs = [
-            { x: 1, y: 0 },
-            { x: -1, y: 0 },
-            { x: 0, y: 1 },
-            { x: 0, y: -1 },
-        ];
-
-        const isOpen = (c: string) => c === " " || c === "S" || c === "E";
-
-        function labelRegions(): number[][] {
-            const labels = Array.from({ length: h }, () => Array(w).fill(-1));
-            let regionId = 0;
-
-            for (let y = 1; y < h - 1; y++) {
-                for (let x = 1; x < w - 1; x++) {
-                    if (!isOpen(g[y][x]) || labels[y][x] !== -1) continue;
-
-                    const stack = [{ x, y }];
-                    labels[y][x] = regionId;
-
-                    while (stack.length > 0) {
-                        const p = stack.pop()!;
-
-                        for (const d of dirs) {
-                            const nx = p.x + d.x;
-                            const ny = p.y + d.y;
-
-                            if (
-                                nx > 0 && ny > 0 &&
-                                nx < w - 1 && ny < h - 1 &&
-                                isOpen(g[ny][nx]) &&
-                                labels[ny][nx] === -1
-                            ) {
-                                labels[ny][nx] = regionId;
-                                stack.push({ x: nx, y: ny });
-                            }
-                        }
-                    }
-
-                    regionId++;
-                }
-            }
-
-            return labels;
-        }
-
-        function findStartEndRegions(labels: number[][]) {
-            return {
-                start: labels[1][1],
-                end: labels[h - 2][w - 2],
-            };
-        }
-
-        while (true) {
-            const labels = labelRegions();
-            const { start, end } = findStartEndRegions(labels);
-
-            if (start !== -1 && start === end) return;
-
-            const candidates: Point[] = [];
-
-            for (let y = 1; y < h - 1; y++) {
-                for (let x = 1; x < w - 1; x++) {
-                    if (g[y][x] !== "#") continue;
-
-                    const touching = new Set<number>();
-
-                    for (const d of dirs) {
-                        const nx = x + d.x;
-                        const ny = y + d.y;
-                        const label = labels[ny][nx];
-
-                        if (label !== -1) touching.add(label);
-                    }
-
-                    // This wall separates two or more open sections
-                    if (touching.size >= 2) {
-                        candidates.push({ x, y });
-                    }
-                }
-            }
-
-            if (candidates.length === 0) return;
-
-            // Prefer candidates that touch the start region or end region
-            const preferred = candidates.filter(p => {
-                const touching = new Set<number>();
-
-                for (const d of dirs) {
-                    const label = labels[p.y + d.y][p.x + d.x];
-                    if (label !== -1) touching.add(label);
-                }
-
-                return touching.has(start) || touching.has(end);
-            });
-
-            const pool = preferred.length > 0 ? preferred : candidates;
-            const chosen = pool[Math.floor(Math.random() * pool.length)];
-
-            cell(g, chosen.x, chosen.y, " ");
         }
     }
 
